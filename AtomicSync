@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# AtomicSync - Precision Synced, Atom by Atom, Version 1.3.1
+# Time syncs with NIST primary and Berkeley secondary for atomic accuracy!
+
+LOG_FILE="$HOME/Blackbox-hwm/atomicsync.log"  # Logs all activity for monitoring
+touch "$LOG_FILE"
+
+echo "$(date): AtomicSync activated - precision synced, atom by atom!" >> "$LOG_FILE"
+
+PRIMARY_SERVER="time.nist.gov"
+SECONDARY_SERVER="ntp.berkeley.edu"
+
+# Sync primary first, secondary as backup
+sudo ntpdate -u $PRIMARY_SERVER >> "$LOG_FILE" 2>&1
+if [ $? -ne 0 ]; then
+    echo "Primary (NPL) failed, bouncing to secondary (Berkeley)..." >> "$LOG_FILE"
+    sudo ntpdate -u $SECONDARY_SERVER >> "$LOG_FILE" 2>&1
+fi
+
+# Check success, update clock
+if [ $? -eq 0 ]; then
+    echo "AtomicSync successful - your clock is now atomically precise!" >> "$LOG_FILE"
+    sudo hwclock -w >> "$LOG_FILE" 2>&1
+else
+    echo "AtomicSync failed - review the logs for atomic troubleshooting!" >> "$LOG_FILE"
+fi
