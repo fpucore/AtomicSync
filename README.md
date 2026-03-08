@@ -19,11 +19,10 @@ AtomicSync is a lightweight utility that synchronizes your system clock to atomi
 
 #### Requirements
 
-Local counting:
 - `bash`
-- `ntupdate`
+- `ntpdate`
 - `hwclock`
-- `sudo` privileges (required for `ntupdate` and `hwclock` -w)
+- `sudo` privileges (required for `ntpdate` and `hwclock` -w)
 - Network access to at least one of the configured NTP servers
 
 #### Installation
@@ -34,6 +33,7 @@ Clone and make executable:
 git clone https://github.com/fpucore/atomicsync.git
 cd atomicsync
 chmod +x AtomicSync
+```
 
 Schedule via cron for regular atomic sync (e.g. every hour):
 
@@ -41,6 +41,7 @@ Schedule via cron for regular atomic sync (e.g. every hour):
 sudo crontab -e
 # Add the following line:
 0 * * * * /path/to/AtomicSync
+```
 
 #### Log File
 
@@ -48,6 +49,7 @@ All sync activity is recorded at:
 
 ```bash
 ~/Blackbox-hwm/atomicsync.log
+```
 
 Each entry is timestamped and includes sync success/failure status and any fallback events.
 
@@ -58,8 +60,10 @@ To change the NTP servers, edit the following variables in AtomicSync:
 ```bash
 PRIMARY_SERVER="time.nist.gov"
 SECONDARY_SERVER="ntp.berkeley.edu"
+```
 
 To change the log file location, edit:
 
 ```bash
 LOG_FILE="$HOME/Blackbox-hwm/atomicsync.log"
+```
