@@ -4,11 +4,11 @@ AtomicSync is a lightweight utility that synchronizes your system clock to atomi
 
 #### Features
 
-- Atomic-accurate time synchronization using ntpdate
+- Atomic-accurate time synchronization using sntp
 - Primary/secondary NTP failover
-- Hardware clock update via hwclock -w after successful sync
+- Hardware clock update via hwclock --systohc after successful sync
 - Automatic logging of all sync activity to a dedicated log file
-- Minimal dependencies (Bash + standard Unix tools)
+- Minimal dependencies (Bash + `sntp`)
 
 #### How It Works
 
@@ -20,9 +20,9 @@ AtomicSync is a lightweight utility that synchronizes your system clock to atomi
 #### Requirements
 
 - `bash`
-- `ntpdate`
+- `sntp`
 - `hwclock`
-- `sudo` privileges (required for `ntpdate` and `hwclock` -w)
+- `sudo` privileges (required for `sntp` and `hwclock --systohc`)
 - Network access to at least one of the configured NTP servers
 
 #### Installation
