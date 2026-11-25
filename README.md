@@ -111,7 +111,7 @@ Single-threaded version:
 Install the execution helper:
 
 ```bash
-> copy cron/AtomicSync.hash $HOME/.hwm/
+> copy cron/AtomicSync.hash $HOME/.hwm/AtomicSync
 ```
 
 Multi-threaded version:
