@@ -1,69 +1,211 @@
-### AtomicSync
+# AtomicSync
 
-AtomicSync is a lightweight utility that synchronizes your system clock to atomic time sources with primary and secondary NTP server failover. It syncs against NIST's primary time server and falls back to Berkeley's NTP server if the primary is unreachable, then writes the corrected time to your hardware clock for persistent accuracy.
+AtomicSync is a lightweight Perl utility that displays a live, atomically-synced
+clock in your terminal console.
 
-#### Features
+It reads the results of your existing `AtomicSync` sync log and renders precision 
+time down to the nanosecond, alongside the Unix epoch and a binary representation 
+of the current time.
 
-- Atomic-accurate time synchronization using sntp
-- Primary/secondary NTP failover
-- Hardware clock update via hwclock --systohc after successful sync
-- Automatic logging of all sync activity to a dedicated log file
-- Minimal dependencies (Bash + `sntp`)
+Version 5.2.1 is a complete rewrite of the previous versions.
 
-#### How It Works
+AtomicSync is now multi-threaded, opening up all CPU core threads for processing.
 
-1. Attempts to sync system time against the primary server (time.nist.gov)
-2. If the primary fails, automatically falls back to the secondary server (ntp.berkeley.edu)
-3. On successful sync, writes the updated time to the hardware clock so it persists across reboots
-4. All activity (successes, failures, and fallback events) is logged to atomicsync.log
+Some older hardware work better with single-threaded processing, therefore a 
+single-threaded version is also provided.
 
-#### Requirements
+- **`AtomicSync-NG.pl`** — multi-threaded (v5.2.1)
+- **`AtomicSync-Legacy.pl`** — single-threaded (v5.2.1)
 
-- `bash`
-- `sntp`
-- `hwclock`
-- `sudo` privileges (required for `sntp` and `hwclock --systohc`)
-- Network access to at least one of the configured NTP servers
+Both render the same display in the terminal console at 20 Hz.
 
-#### Installation
+The multi-threaded version isolates rendering from log polling so redraws are 
+never stalled by disk I/O.
 
-Clone and make executable:
+---
+
+## AtomicSync features
+
+- Live terminal console clock with nanosecond precision
+- Unix epoch and binary (HH : MM : SS) representations
+- Last-sync summary parsed from `atomicsync.log` (server, offset, uncertainty, stratum)
+- 20 Hz redraw (50 ms period)
+- Log re-read every 60 seconds without blocking the display
+- Clean (and improved) terminal console restore on quit (`Q`, `Ctrl-C`, or `SIGTERM`)
+- Launches inside `xterm` automatically when run without `--loop`
+- Multi-threaded version reports frame/gap diagnostics with `--stats` argument
+- Minimal dependencies (core Perl modules plus `Term::ReadKey`)
+
+---
+
+## How it works
+
+1. On execution (without `--loop`) the script executes `xterm` and re-runs itself
+   with `--loop` inside the new terminal console.
+2. The render loop samples `CLOCK_REALTIME` and `CLOCK_MONOTONIC` via
+   `Time::HiRes`, draws the banner, precision time, Unix epoch and binary time 
+   representations, and a last-sync summary.
+3. The last-sync summary is parsed from the most recent `AtomicSync successful`
+   entry in `atomicsync.log`, scanning backwards up to five lines to recover the 
+   detailed offset/uncertainty/server record.
+4. In the multi-threaded version a dedicated log-reader thread refreshes the
+   summary every 60 secs while the render thread keeps (re)drawing at 20 Hz.
+
+---
+
+## Runtime & Packaging requirements
+
+- GNU Operating System / H-Linux
+- H-Linux Environment Library
+- H-Linux Human Command Layer
+- Hash
+- Perl 5 (w/ `threads` and `threads::shared` for `AtomicSync-NG.pl`)
+- PAR Packager (`perl-par-packer`)
+- `Time::HiRes` (core)
+- `IO::Select` (core)
+- `Cwd` (core)
+- `Term::ReadKey`
+- `xterm` (for the default non-`--loop` launch mode)
+- A populated `atomicsync.log` produced by the AtomicSync sync script
+
+---
+
+## Compile & Install procedures
+
+### Clone the repository:
 
 ```bash
-git clone https://github.com/fpucore/atomicsync.git
-cd atomicsync
-chmod +x AtomicSync
+> gh repo clone https://www.github.com/fpucore/AtomicSync.git
+
+> goto AtomicSync
 ```
 
-Schedule via cron for regular atomic sync (e.g. every hour):
+### Install `perl-par-packer` (only if not already installed)
 
 ```bash
-sudo crontab -e
-# Add the following line:
-0 * * * * /path/to/AtomicSync
+> boxforge install perl-par-packer
 ```
 
-#### Log File
-
-All sync activity is recorded at:
+### Install `Term::ReadKey` (only if not already installed)
 
 ```bash
-~/Blackbox-hwm/atomicsync.log
+> cpan Term::ReadKey
 ```
 
-Each entry is timestamped and includes sync success/failure status and any fallback events.
+### Compile
 
-#### Configuration
-
-To change the NTP servers, edit the following variables in AtomicSync:
+Multi-threaded version:
 
 ```bash
-PRIMARY_SERVER="time.nist.gov"
-SECONDARY_SERVER="ntp.berkeley.edu"
+> pp -M threads -M threads::shared -M Term::ReadKey -M Time::HiRes -o AtomicSync-NG AtomicSync-NG.pl
 ```
 
-To change the log file location, edit:
+Single-threaded version:
 
 ```bash
-LOG_FILE="$HOME/Blackbox-hwm/atomicsync.log"
+> pp -o AtomicSync-Legacy AtomicSync-Legacy.pl
 ```
+
+### Install
+
+Install the execution helper:
+
+```bash
+> copy cron/AtomicSync.hash $HOME/.hwm/
+```
+
+Multi-threaded version:
+
+```bash
+> elevate copy AtomicSync-NG /usr/local/bin/
+```
+
+Single-threaded version:
+
+```bash
+> elevate copy AtomicSync-Legacy /usr/local/bin/
+```
+
+### Add cron job
+
+```bash
+> crontab -e
+```
+
+Add the job execution string:
+```bash
+0 * * * * /home/foobar/.hwm/AtomicSync
+```
+
+*Remember to change `foobar` to your actual username.*
+
+### Manually execute
+
+```bash
+> AtomicSync-NG
+```
+
+or
+
+```bash
+> AtomicSync-Legacy
+```
+
+---
+
+## Example
+
+```bash
+AtomicSync — Precision Synced, Atom by Atom
+
+
+Precision:
+    09:51:07.508601427
+
+Unix:
+    1795564267
+
+Binary:
+    001001 : 110011 : 000111
+
+Last sync:
+    2026-11-25 09:00:03.918243  offset +0.044057 s  +/-0.029956 s  time.nist.gov (132.163.97.3, s1)
+```
+
+---
+
+## Usage
+
+Multi-threaded version:
+
+```bash
+> AtomicSync-NG                   # execute in xterm and run the display
+> AtomicSync-NG --loop            # run display loop in the current terminal console
+> AtomicSync-NG --loop --stats    # print frame/gap diagnostics on exit
+```
+
+Single-threaded version:
+
+```bash
+> AtomicSync-Legacy                  # execute in xterm and run the display
+> AtomicSync-Legacy --loop           # run display loop in the current terminal console
+> AtomicSync-Legacy --loop --once    # print one frame and exit
+```
+
+Keys: Q/q, ESC, or CTRL+C to quit the program.
+
+---
+
+## Log File
+
+The display reads sync activity from the log file:
+
+```bash
+$HOME/Blackbox-hwm/atomicsync.log
+```
+
+---
+
+## License
+
+AtomicSync is released under the **MIT License**.
