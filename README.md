@@ -49,7 +49,7 @@ never stalled by disk I/O.
    entry in `atomicsync.log`, scanning backwards up to five lines to recover the 
    detailed offset/uncertainty/server record.
 4. In the multi-threaded version a dedicated log-reader thread refreshes the
-   summary every 60 secs while the render thread keeps (re)drawing at 20 Hz.
+   summary every 60 seconds while the render thread keeps (re)drawing at 20 Hz.
 
 ---
 
