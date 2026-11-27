@@ -19,11 +19,11 @@ say "$(date): AtomicSync activated - precision synced, atom by atom!" >> "$LOG_F
 
 # Sync pipeline: Primary > Secondary > Fallback
     # -4 forces IPv4. Don't use IPv6 as it introduces unnecessary sync latency
-if sudo sntp -4 -s "$PRIMARY_SERVER" >> "$LOG_FILE" 2>&1; then
+if sudo sntp -4 -S "$PRIMARY_SERVER" >> "$LOG_FILE" 2>&1; then
     say "[$PRIMARY_SERVER] AtomicSync successful - your clock is now atomically precise!" >> "$LOG_FILE"
-elif sudo sntp -4 -s "$SECONDARY_SERVER" >> "$LOG_FILE" 2>&1; then
+elif sudo sntp -4 -S "$SECONDARY_SERVER" >> "$LOG_FILE" 2>&1; then
     say "[$SECONDARY_SERVER] AtomicSync successful - your clock is now atomically precise!" >> "$LOG_FILE"
-elif sudo sntp -4 -s "$FALLBACK_SERVER" >> "$LOG_FILE" 2>&1; then
+elif sudo sntp -4 -S "$FALLBACK_SERVER" >> "$LOG_FILE" 2>&1; then
     say "[$FALLBACK_SERVER] AtomicSync successful - your clock is now atomically precise!" >> "$LOG_FILE"
 else
     say "AtomicSync failed - review the logs for atomic troubleshooting!" >> "$LOG_FILE"
